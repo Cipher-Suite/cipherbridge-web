@@ -19,32 +19,5 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-   <div id="error-log" style="position:fixed;bottom:0;left:0;right:0;background:#ff4466;color:white;padding:10px;z-index:99999;font-family:monospace;font-size:12px;max-height:200px;overflow:auto;">
-  Loading...
-</div>
-
-<script>
-  // Catch all errors and show them
-  window.onerror = function(msg, url, line, col, error) {
-    const errorLog = document.getElementById('error-log');
-    errorLog.innerHTML += `<div>ERROR: ${msg} at ${url}:${line}</div>`;
-    errorLog.innerHTML += `<div>${error?.stack?.split('\\n')[0] || ''}</div>`;
-    return true;
-  };
-  
-  // Catch unhandled promise rejections
-  window.onunhandledrejection = function(e) {
-    const errorLog = document.getElementById('error-log');
-    errorLog.innerHTML += `<div>PROMISE ERROR: ${e.reason?.message || e.reason}</div>`;
-  };
-  
-  // Log when React should load
-  setTimeout(() => {
-    const root = document.getElementById('root');
-    if (root && root.innerHTML === '') {
-      document.getElementById('error-log').innerHTML += '<div>Root is still empty after 3 seconds</div>';
-    }
-  }, 3000);
-</script>
   </body>
 </html>
