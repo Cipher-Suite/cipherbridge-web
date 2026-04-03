@@ -6,6 +6,10 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 3000,
+    allowedHosts: [
+      'overtruthful-domenic-nonsignable.ngrok-free.dev',
+      '.ngrok-free.dev',  
+    ],
     proxy: {
       '/api': {
         target: 'https://gateway.cipherbridge.cloud',
