@@ -1,8 +1,8 @@
 // src/theme.js — shared design tokens
 export const T = {
   // Backgrounds
-  // bg:          '#08080d',
-  bg: '#ffffff',
+  bg:          '#08080d',
+  // bg: '#ffffff',
   bgSurface:   '#0f0f18',
   bgCard:      '#14142a',
   bgCardHover: '#1a1a36',
@@ -26,8 +26,8 @@ export const T = {
   yellow: '#ffd644',
 
   // Text
-  // text:     '#e4e4f0',
-  text: '#000000',
+  text:     '#e4e4f0',
+ //  text: '#000000',
   textMuted:'#8888a8',
   textDim:  '#555570',
 
