@@ -6,23 +6,6 @@ import { useAuth } from '../auth/AuthContext';
 
 export default function Settings() {
   const { user, logout } = useAuth();
-  const [rotating, setRotating] = useState(false);
-  const [newKey, setNewKey] = useState(null);
-  
-  const handleRotate = async () => {
-      if (!confirm('This will invalidate your current key. Continue?')) return;
-      setRotating(true);
-    try {
-        const data = await rotateMyKey();
-        setNewKey(data.api_key);
-        // Update the session with the new key
-        await login(data.api_key);
-    } catch (e) {
-        alert(`Rotation failed: ${e.message}`);
-    } finally {
-        setRotating(false);
-    }
-  };
 
   return (
     <div style={{ maxWidth: 600 }}>
@@ -36,24 +19,6 @@ export default function Settings() {
             <input value={user?.apiKey || '••••••••••••••••'} readOnly
               style={{ flex: 1, padding: '10px 14px', background: T.bgInput, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, color: T.textMuted, fontFamily: T.mono, fontSize: 13, outline: 'none' }} />
           </div>
-        </div>
-        <div>
-            <h3>API Key</h3>
-            <p>Your current key: <code>{user.apiKey.slice(0, 8)}...</code></p>
-            {newKey && (
-                <div style={{ background: T.orangeBg, padding: 12, borderRadius: T.radius }}>
-                    <strong>New key (copy now — shown once):</strong>
-                    <code style={{ display: 'block', marginTop: 8 }}>{newKey}</code>
-                </div>
-                               
-            )}
-            <button onClick={handleRotate} disabled={rotating}>
-                {rotating ? 'Rotating...' : 'Rotate API Key'}
-            </button>
-            <p style={{ color: T.textMuted, fontSize: 12 }}>
-                If you lose your key, ask your gateway admin to reset it via
-                the admin panel using your User ID: <code>{user.userId}</code>
-            </p>
         </div>
         <div>
           <label style={{ fontFamily: T.font, fontSize: 11, color: T.textDim, fontWeight: 600, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gateway</label>
