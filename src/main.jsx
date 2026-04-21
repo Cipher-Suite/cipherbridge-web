@@ -1,8 +1,15 @@
+// src/main.jsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import App from './App';
+import { globalStyles } from './theme';
+
+// Inject global CSS once
+const styleEl = document.createElement('style');
+styleEl.textContent = globalStyles;
+document.head.appendChild(styleEl);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

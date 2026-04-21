@@ -1,74 +1,111 @@
 // src/dashboard/Positions.jsx
 import { T } from '../theme';
-import { Badge, StatCard, SectionTitle } from '../components';
+import { Badge, StatCard, SectionTitle, Alert, EmptyState, Btn, Spinner } from '../components';
 import { usePositions } from '../hooks/useData';
 
 export default function Positions() {
   const { positions, loading, error, refresh, close } = usePositions();
-
-  const totalPL = positions.reduce((sum, p) => sum + (p.profit || 0), 0);
+  const totalPL = positions.reduce((s, p) => s + (p.profit || 0), 0);
+  const wins    = positions.filter(p => (p.profit || 0) >= 0).length;
 
   return (
     <div>
-      <SectionTitle sub="All open positions across your accounts">Positions</SectionTitle>
+      <SectionTitle
+        sub="Open positions across all connected accounts"
+        action={<Btn size="sm" variant="ghost" onClick={refresh}>↻ Refresh</Btn>}
+      >Positions</SectionTitle>
 
-      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 32 }}>
-        <StatCard label="Open" value={loading ? '...' : positions.length} color={T.blue} />
-        <StatCard label="Floating P/L" value={loading ? '...' : `$${totalPL.toFixed(2)}`} color={totalPL >= 0 ? T.green : T.red} />
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 28 }}>
+        <StatCard label="Open"       value={loading ? '—' : positions.length} color={T.blue} />
+        <StatCard label="Floating P/L" value={loading ? '—' : `$${totalPL.toFixed(2)}`} color={totalPL >= 0 ? T.green : T.red} />
+        <StatCard label="Winning"    value={loading ? '—' : wins} sub={positions.length > 0 ? `${Math.round(wins/positions.length*100)}%` : ''} color={T.green} />
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-        <button onClick={refresh} style={{
-          fontFamily: T.font, fontSize: 12, fontWeight: 600, color: T.textMuted,
-          background: 'transparent', border: `1px solid ${T.border}`, padding: '8px 16px',
-          borderRadius: T.radiusSm, cursor: 'pointer',
-        }}>↻ Refresh</button>
-      </div>
-
-      {error && <div style={{ padding: '12px', borderRadius: T.radiusSm, background: T.redBg, border: `1px solid ${T.red}33`, fontFamily: T.font, fontSize: 13, color: T.red, marginBottom: 16 }}>{error}</div>}
+      {error && <Alert>{error}</Alert>}
 
       {loading ? (
-        <div style={{ fontFamily: T.font, fontSize: 14, color: T.textDim, padding: 40, textAlign: 'center' }}>Loading positions...</div>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 64 }}><Spinner size={24} /></div>
       ) : positions.length === 0 ? (
-        <div style={{ background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: 48, textAlign: 'center' }}>
-          <p style={{ fontFamily: T.font, fontSize: 15, color: T.textMuted }}>No open positions.</p>
-        </div>
+        <EmptyState icon="◈" title="No open positions" sub="Positions will appear here once you place trades." />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {/* Header */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: '90px 80px 55px 55px 90px 90px 90px 70px',
-            gap: 8, padding: '8px 18px', fontFamily: T.font, fontSize: 11, color: T.textDim,
-            fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
-          }}>
-            <span>Ticket</span><span>Symbol</span><span>Side</span><span>Vol</span>
-            <span>Entry</span><span>Current</span><span>P/L</span><span></span>
-          </div>
-          {positions.map((p, i) => (
-            <div key={p.ticket || i} style={{
-              display: 'grid', gridTemplateColumns: '90px 80px 55px 55px 90px 90px 90px 70px',
-              alignItems: 'center', gap: 8, padding: '14px 18px',
-              background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: T.radiusSm,
-              fontFamily: T.mono, fontSize: 12,
+        <>
+          {/* Desktop table */}
+          <div className="pos-table" style={{ overflowX: 'auto' }}>
+            <div style={{
+              display: 'grid', gridTemplateColumns: '100px 90px 55px 65px 110px 110px 100px 80px',
+              gap: 8, padding: '7px 18px', fontFamily: T.font, fontSize: 10, color: T.textDim,
+              fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', minWidth: 680,
             }}>
-              <span style={{ color: T.textDim }}>{p.ticket}</span>
-              <span style={{ color: T.text, fontWeight: 600, fontFamily: T.font }}>{p.symbol}</span>
-              <Badge color={p.type === 0 ? T.green : T.red}>{p.type === 0 ? 'Buy' : 'Sell'}</Badge>
-              <span style={{ color: T.textMuted }}>{p.volume}</span>
-              <span style={{ color: T.textMuted }}>{p.price_open}</span>
-              <span style={{ color: T.text }}>{p.price_current}</span>
-              <span style={{ color: (p.profit || 0) >= 0 ? T.green : T.red, fontWeight: 600 }}>
-                {(p.profit || 0) >= 0 ? '+' : ''}${(p.profit || 0).toFixed(2)}
-              </span>
-              <button onClick={() => close(p.ticket)} style={{
-                background: T.redBg, border: `1px solid ${T.red}33`, color: T.red,
-                borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontFamily: T.font,
-                fontSize: 11, fontWeight: 700,
-              }}>Close</button>
+              {['Ticket','Symbol','Side','Volume','Entry','Current','P/L',''].map(h => <span key={h}>{h}</span>)}
             </div>
-          ))}
-        </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {positions.map((p, i) => {
+                const pl = p.profit || 0;
+                const side = p.side?.toLowerCase() || (p.type === 0 ? 'buy' : 'sell');
+                return (
+                  <div key={p.ticket || i} style={{
+                    display: 'grid', gridTemplateColumns: '100px 90px 55px 65px 110px 110px 100px 80px',
+                    alignItems: 'center', gap: 8, padding: '13px 18px', minWidth: 680,
+                    background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: T.radiusSm,
+                  }}>
+                    <span style={{ fontFamily: T.mono, fontSize: 11, color: T.textDim }}>{p.ticket}</span>
+                    <span style={{ fontFamily: T.font, fontSize: 13, fontWeight: 700, color: T.text }}>{p.symbol}</span>
+                    <Badge color={side === 'buy' ? T.green : T.red}>{side}</Badge>
+                    <span style={{ fontFamily: T.mono, fontSize: 12, color: T.textMuted }}>{p.volume}</span>
+                    <span style={{ fontFamily: T.mono, fontSize: 12, color: T.textMuted }}>{p.price_open || p.open_price}</span>
+                    <span style={{ fontFamily: T.mono, fontSize: 12, color: T.text }}>{p.price_current || p.current_price}</span>
+                    <span style={{ fontFamily: T.mono, fontSize: 13, fontWeight: 700, color: pl >= 0 ? T.green : T.red }}>
+                      {pl >= 0 ? '+' : ''}${pl.toFixed(2)}
+                    </span>
+                    <Btn size="sm" variant="danger" onClick={() => { if (window.confirm(`Close #${p.ticket}?`)) close(p.ticket); }}>
+                      Close
+                    </Btn>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="pos-cards" style={{ display: 'none', flexDirection: 'column', gap: 10 }}>
+            {positions.map((p, i) => {
+              const pl   = p.profit || 0;
+              const side = p.side?.toLowerCase() || (p.type === 0 ? 'buy' : 'sell');
+              return (
+                <div key={p.ticket || i} style={{ background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontFamily: T.font, fontSize: 15, fontWeight: 800, color: T.text }}>{p.symbol}</span>
+                      <Badge color={side === 'buy' ? T.green : T.red}>{side}</Badge>
+                    </div>
+                    <span style={{ fontFamily: T.mono, fontSize: 15, fontWeight: 800, color: pl >= 0 ? T.green : T.red }}>
+                      {pl >= 0 ? '+' : ''}${pl.toFixed(2)}
+                    </span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
+                    {[['Vol', p.volume], ['Entry', p.price_open || p.open_price], ['Current', p.price_current || p.current_price]].map(([l, v]) => (
+                      <div key={l}>
+                        <div style={{ fontFamily: T.font, fontSize: 10, color: T.textDim, marginBottom: 2 }}>{l}</div>
+                        <div style={{ fontFamily: T.mono, fontSize: 12, color: T.text }}>{v}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <Btn size="sm" variant="danger" style={{ width: '100%' }} onClick={() => { if (window.confirm(`Close #${p.ticket}?`)) close(p.ticket); }}>
+                    Close #{p.ticket}
+                  </Btn>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
+
+      <style>{`
+        @media(max-width:720px){
+          .pos-table{display:none!important}
+          .pos-cards{display:flex!important}
+        }
+      `}</style>
     </div>
   );
 }
