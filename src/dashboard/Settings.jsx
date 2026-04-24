@@ -38,24 +38,29 @@ export default function Settings() {
   const sectionHead = { fontFamily: T.font, fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 18 };
 
   return (
-    <div
-      style={{
-        ...card,
-        display:         'flex',
-        justifyContent:  'space-between',
-        alignItems:      'center',
-        cursor:          'pointer',  
-      }}
-      onClick={() => navigate('/billing')}
-    >
-      <div>
-        <h3 style={sectionHead}>Plan & Billing</h3>
-        <p style={{ fontFamily: T.font, fontSize: 13, color: T.textMuted, marginTop: -10 }}>
-          Manage your subscription, upgrade your plan, and view payment history.
-        </p>
+    <>
+      {/* Plan & Billing card */}
+      <div
+        style={{
+          ...card,
+          display:         'flex',
+          justifyContent:  'space-between',
+          alignItems:      'center',
+          cursor:          'pointer',
+        }}
+        onClick={() => navigate('/billing')}
+      >
+        <div>
+          <h3 style={sectionHead}>Plan & Billing</h3>
+          <p style={{ fontFamily: T.font, fontSize: 13, color: T.textMuted, marginTop: -10 }}>
+            Manage your subscription, upgrade your plan, and view payment history.
+          </p>
+        </div>
+        <span style={{ color: T.textDim, fontSize: 18 }}>→</span>
       </div>
-      <span style={{ color: T.textDim, fontSize: 18 }}>→</span>
-    <div style={{ maxWidth: 580 }}>
+
+      {/* Settings section */}
+      <div style={{ maxWidth: 580 }}>
       <SectionTitle sub="API key, gateway configuration, and session">Settings</SectionTitle>
 
       {/* API Key */}
@@ -134,5 +139,6 @@ export default function Settings() {
         </div>
       </div>
     </div>
+ </>
   );
 }
