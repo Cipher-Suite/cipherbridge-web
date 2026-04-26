@@ -11,7 +11,7 @@ export function CodeBlock({ code, title }) {
       {title && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: `1px solid ${T.border}`, background: T.bgCard }}>
           <span style={{ fontFamily: T.mono, fontSize: 12, color: T.textDim }}>{title}</span>
-          <button onClick={handleCopy} style={{ background: 'none', border: 'none', color: copied ? T.accent : T.textDim, cursor: 'pointer', fontFamily: T.mono, fontSize: 11 }}>
+          <button onClick={handleCopy} style={{ background: copied ? T.accentBg : 'none', border: `1px solid ${copied ? T.accent + '44' : 'transparent'}`, color: copied ? T.accent : T.textDim, cursor: 'pointer', fontFamily: T.mono, fontSize: 11, padding: '3px 8px', borderRadius: T.radiusSm, transition: T.transition }}>
             {copied ? '✓ Copied' : 'Copy'}
           </button>
         </div>
