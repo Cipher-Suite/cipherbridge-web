@@ -5,6 +5,7 @@ import { T } from '../theme';
 import { SectionTitle, Badge, Btn, Alert, EmptyState, Spinner, CodeBlock } from '../components';
 import { useWebhooks } from '../hooks/useData';
 import { useAccounts } from '../hooks/useData';
+import { ConfirmDialog } from '../components';
 
 export default function Webhooks() {
   const navigate = useNavigate();
@@ -16,6 +17,8 @@ export default function Webhooks() {
   const [newToken, setNewToken] = useState(null);
   const [copied, setCopied]   = useState({});
   const [createErr, setCreateErr] = useState('');
+  const [confirmRevoke, setConfirmRevoke] = useState(null);
+  const [revokeLoading, setRevokeLoading] = useState(false);
 
   const handleCreate = async () => {
     if (!selAccount) { setCreateErr('Select an account first'); return; }
@@ -122,7 +125,7 @@ export default function Webhooks() {
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                     <Btn size="sm" variant="ghost" onClick={() => navigate(`/accounts/${t.account_id}`)}>Details</Btn>
-                    <Btn size="sm" variant="danger" onClick={() => { if (window.confirm('Revoke this token?')) revoke(t.id); }}>Revoke</Btn>
+                    <Btn size="sm" variant="danger" onClick={() => setConfirmRevoke(t.id)}>Revoke</Btn>
                   </div>
                 </div>
               </div>
@@ -157,6 +160,22 @@ export default function Webhooks() {
   "comment":    "tv-signal"
 }`} />
       </div>
+      <ConfirmDialog
+        open={!!confirmRevoke}
+        title="Revoke Webhook?"
+        message="The webhook URL will stop working immediately."
+        dangerous={true}
+        confirmText="Revoke"
+        loading={revokeLoading}
+        onConfirm={() => {
+          setRevokeLoading(true);
+          revoke(confirmRevoke).finally(() => {
+            setRevokeLoading(false);
+            setConfirmRevoke(null);
+          });
+        }}
+        onCancel={() => setConfirmRevoke(null)}
+      />      
     </div>
   );
 }

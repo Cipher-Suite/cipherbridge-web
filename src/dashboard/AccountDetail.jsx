@@ -6,6 +6,8 @@ import { SectionTitle, StatusDot, Btn, Modal, Alert, Input, Spinner, Badge, Empt
 import { useAccountDetail } from '../hooks/useData';
 import { useWebhooks } from '../hooks/useData';
 import { pauseAccount, resumeAccount, deleteAccount } from '../api/endpoints';
+import { ConfirmDialog } from '../components';
+import { useToast } from '../hooks/useToast';
 
 // ── Webhook panel inside account detail ────────────────────────────────────
 function WebhookPanel({ accountId }) {
@@ -22,6 +24,9 @@ function WebhookPanel({ accountId }) {
   const [testResult,  setTestResult]  = useState(null);
   const [testLoading, setTestLoading] = useState(false);
   const [copyDone,  setCopyDone]  = useState({});
+  const [confirmRevoke, setConfirmRevoke] = useState(null);
+  const [revokeLoading, setRevokeLoading] = useState(false); 
+  const { error: showError } = useToast();
 
   const handleCreate = async () => {
     setCreating(true);
@@ -29,14 +34,11 @@ function WebhookPanel({ accountId }) {
       const data = await create(accountId, label.trim());
       setNewToken(data);
       setLabel('');
-    } catch (e) { alert(e.message); }
+    } catch (e) { showError(e.message || 'Failed to create webhook'); }
     setCreating(false);
   };
 
-  const handleRevoke = async (id) => {
-    if (!window.confirm('Revoke this webhook token? The URL will stop working immediately.')) return;
-    await revoke(id);
-  };
+  const handleRevoke = (id) => setConfirmRevoke(id);
 
   const handleTest = async () => {
     setTestLoading(true); setTestResult(null);
@@ -154,20 +156,39 @@ function WebhookPanel({ accountId }) {
           <Btn loading={testLoading} onClick={handleTest} style={{ flex: 1 }}>Run Test</Btn>
         </div>
       </Modal>
+      <ConfirmDialog
+        open={!!confirmRevoke}
+        title="Revoke Webhook?"
+        message="The webhook URL will stop working immediately."
+        dangerous={true}
+        confirmText="Revoke"
+        loading={revokeLoading}
+        onConfirm={() => {
+          setRevokeLoading(true);
+          revoke(confirmRevoke).finally(() => {
+            setRevokeLoading(false);
+            setConfirmRevoke(null);
+          });
+        }}
+        onCancel={() => setConfirmRevoke(null)}
+      />
     </div>
   );
-}
+} 
 
-// ── Account Detail page ────────────────────────────────────────────────────
+// ── Account Detail page 
 export default function AccountDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { account, status, loading, error, refresh } = useAccountDetail(id);
   const [actionLoading, setActionLoading] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const { error: showError } = useToast();
 
   const act = async (fn) => {
     setActionLoading(true);
-    try { await fn(id); await refresh(); } catch (e) { alert(e.message); }
+    try { await fn(id); await refresh(); } catch (e) { showError(e.message || 'Action failed'); }
     setActionLoading(false);
   };
 
@@ -203,10 +224,7 @@ export default function AccountDetail() {
           {(a.status === 'paused' || a.status === 'disconnected') && (
             <Btn size="sm" variant="success" loading={actionLoading} onClick={() => act(resumeAccount)}>Resume</Btn>
           )}
-          <Btn size="sm" variant="danger" loading={actionLoading} onClick={() => {
-            if (window.confirm('Delete this account? MT5 instance will be deprovisioned.'))
-              act(deleteAccount).then(() => navigate('/'));
-          }}>Delete</Btn>
+          <Btn size="sm" variant="danger" loading={actionLoading || deleteLoading} onClick={() => setConfirmDelete(true)}>Delete</Btn>
         </div>
       </div>
 
@@ -278,6 +296,24 @@ export default function AccountDetail() {
 }`}
         />
       </div>
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Delete Account?"
+        message="This will deprovision the MT5 instance. All data will be lost permanently."
+        dangerous={true}
+        confirmText="Delete"
+        loading={deleteLoading}
+        onConfirm={() => {
+          setDeleteLoading(true);
+          act(deleteAccount)
+            .then(() => navigate('/'))
+            .finally(() => {
+              setDeleteLoading(false);
+              setConfirmDelete(false);
+            });
+        }}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </div>
   );
 }

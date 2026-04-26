@@ -1,13 +1,17 @@
 // src/dashboard/Positions.jsx
 import { T } from '../theme';
+import { useState } from 'react';
 import { Badge, StatCard, SectionTitle, Alert, EmptyState, Btn, Spinner } from '../components';
 import { usePositions } from '../hooks/useData';
+import { ConfirmDialog } from '../components';
 
 export default function Positions() {
   const { positions, loading, error, refresh, close } = usePositions();
+  const [confirmClose, setConfirmClose] = useState(null);
+  const [closeLoading, setCloseLoading] = useState(false);
   const totalPL = positions.reduce((s, p) => s + (p.profit || 0), 0);
   const wins    = positions.filter(p => (p.profit || 0) >= 0).length;
-
+  
   return (
     <div>
       <SectionTitle
@@ -57,7 +61,7 @@ export default function Positions() {
                     <span style={{ fontFamily: T.mono, fontSize: 13, fontWeight: 700, color: pl >= 0 ? T.green : T.red }}>
                       {pl >= 0 ? '+' : ''}${pl.toFixed(2)}
                     </span>
-                    <Btn size="sm" variant="danger" onClick={() => { if (window.confirm(`Close #${p.ticket}?`)) close(p.ticket); }}>
+                    <Btn size="sm" variant="danger" onClick={() => setConfirmClose(p.ticket)}>
                       Close
                     </Btn>
                   </div>
@@ -90,7 +94,7 @@ export default function Positions() {
                       </div>
                     ))}
                   </div>
-                  <Btn size="sm" variant="danger" style={{ width: '100%' }} onClick={() => { if (window.confirm(`Close #${p.ticket}?`)) close(p.ticket); }}>
+                  <Btn size="sm" variant="danger" style={{ width: '100%' }} onClick={() => setConfirmClose(p.ticket)}>
                     Close #{p.ticket}
                   </Btn>
                 </div>
@@ -106,6 +110,23 @@ export default function Positions() {
           .pos-cards{display:flex!important}
         }
       `}</style>
+      
+      <ConfirmDialog
+        open={!!confirmClose}
+        title={`Close Position #${confirmClose}?`}
+        message="This will close your position at market price."
+        dangerous={true}
+        confirmText="Close"
+        loading={closeLoading}
+        onConfirm={() => {
+          setCloseLoading(true);
+          close(confirmClose).finally(() => {
+            setCloseLoading(false);
+            setConfirmClose(null);
+          });
+        }}
+        onCancel={() => setConfirmClose(null)}
+      />      
     </div>
   );
 }

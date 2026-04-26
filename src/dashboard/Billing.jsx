@@ -10,10 +10,9 @@ import {
   createStripeCheckout,
   createCryptoCheckout,
   getPaymentStatus,
-} from '../api/billingClient';
+} from '../api/endpoints'; 
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
+// ── Helpers 
 function formatDate(iso) {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('en-US', {
