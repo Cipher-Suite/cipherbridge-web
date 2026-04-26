@@ -1,23 +1,13 @@
 // src/api/billingClient.js
-//! HTTP client for Tonpo Billing service.
-//!
-//! Auth note:
-//! Currently uses VITE_BILLING_API_KEY directly from env.
-//! Before going to production, replace with a gateway proxy:
-//!   GET  /api/billing/subscription   → gateway proxies to billing using service account
-//!   POST /api/billing/checkout/*     → same
-//! The gateway already authenticates the user with their API key, so this is
-//! the correct security boundary. The billing API key should never reach the browser.
-
-const BILLING_URL = import.meta.env.VITE_BILLING_URL || 'https://billing.tonpo.cloud';
-const BILLING_KEY = import.meta.env.VITE_BILLING_API_KEY || '';
+import { api } from './client';
+import { GATEWAY_URL } from '../theme';
 
 async function billingFetch(path, options = {}) {
-  const res = await fetch(`${BILLING_URL}${path}`, {
+  const res = await fetch(`${GATEWAY_URL}/api/billing${path}`, {  
     ...options,
     headers: {
-      'Content-Type':  'application/json',
-      'X-API-Key':     BILLING_KEY,
+      'Content-Type': 'application/json',
+      'X-API-Key':    api.getApiKey(),
       ...options.headers,
     },
   });
@@ -34,7 +24,7 @@ async function billingFetch(path, options = {}) {
 
 /** GET /plans — public, no auth needed */
 export async function getPlans() {
-  const res = await fetch(`${BILLING_URL}/plans`);
+  const res = await fetch(`https://billing.tonpo.cloud/plans`);
   if (!res.ok) throw new Error('Failed to load plans');
   const data = await res.json();
   return data.plans;
