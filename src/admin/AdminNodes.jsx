@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { T } from '../theme';
 import { SectionTitle, Badge, Btn, Alert, EmptyState, Spinner } from '../components';
 import { adminRegisterNode } from '../api/endpoints';
-import * as api from '../api/endpoints';
+import { adminListNodes } from '../api/endpoints';
 
 function useNodes() {
   const [nodes,   setNodes]   = useState([]);
@@ -14,8 +14,8 @@ function useNodes() {
     setLoading(true);
     try {
       // Admin nodes endpoint — may return { nodes: [...] } or array directly
-      const data = await api.healthCheck();
-      setNodes(data.nodes || []);
+      const { nodes } = await adminListNodes();
+      setNodes(nodes || []);
       setError(null);
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
