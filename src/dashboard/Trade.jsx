@@ -2,10 +2,8 @@
 import { useState, useEffect } from 'react';
 import { T } from '../theme';
 import { SectionTitle, Alert, Btn } from '../components';
-import { placeOrder, getAccountInfo } from '../api/endpoints';
 import { useAccounts } from '../hooks/useData';
-
-const SYMBOLS = ['EURUSD','GBPUSD','USDJPY','AUDUSD','USDCAD','XAUUSD','BTCUSD','US100','US500'];
+import { listSymbols, placeOrder, getAccountInfo } from '../api/endpoints';
 
 export default function Trade() {
   const { accounts } = useAccounts();
@@ -23,6 +21,28 @@ export default function Trade() {
   const [loading,    setLoading]   = useState(false);
   const [result,     setResult]    = useState(null);
   const [error,      setError]     = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [symbols, setSymbols] = useState(['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'XAUUSD', 'BTCUSD', 'US100', 'US500']);
+  const [symbolsLoading, setSymbolsLoading] = useState(true);
+  const validateField = (name, value) => {
+    setFieldErrors(prev => {
+      const next = { ...prev };
+      if (name === 'volume') {
+        const v = parseFloat(value);
+        if (!value || isNaN(v) || v <= 0) next.volume = 'Must be > 0';
+        else delete next.volume;        
+      }
+      if (name === 'sl' && value) {
+        if (isNaN(parseFloat(value)) || parseFloat(value) <= 0) next.sl = 'Invalid price';
+        else delete next.sl;
+      }
+      if (name === 'tp' && value) {
+        if (isNaN(parseFloat(value)) || parseFloat(value) <= 0) next.tp = 'Invalid price';
+        else delete next.tp;
+      }
+      return next;
+    });
+  };
 
   // Auto-select first active account
   useEffect(() => {
@@ -30,6 +50,13 @@ export default function Trade() {
       setAccountId(activeAccounts[0].id || activeAccounts[0].account_id);
     }
   }, [activeAccounts, accountId]);
+  
+  useEffect(() => {
+    listSymbols()
+      .then(data => setSymbols(data.symbols || []))
+      .catch(() => {})  // Use default symbols on error
+      .finally(() => setSymbolsLoading(false));
+  }, []);  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -64,7 +91,7 @@ export default function Trade() {
         <Alert variant="warning">No active accounts. Connect and wait for an account to become active before placing orders.</Alert>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px,420px) 1fr', gap: 24, alignItems: 'start', flexWrap: 'wrap' }}>
+      <div className="trade-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px,420px) 1fr', gap: 24, alignItems: 'start' }}>
         {/* Order form */}
         <form onSubmit={handleSubmit} style={{ background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: T.radiusLg, padding: 24 }}>
 
@@ -84,7 +111,7 @@ export default function Trade() {
           <div style={{ marginBottom: 20 }}>
             <label style={labelStyle}>Symbol</label>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-              {SYMBOLS.slice(0, 5).map(s => (
+              {symbols.slice(0, 5).map(s => (
                 <button key={s} type="button" onClick={() => setSymbol(s)} style={{
                   padding: '5px 10px', borderRadius: T.radiusSm, fontFamily: T.mono, fontSize: 11, cursor: 'pointer',
                   background: symbol === s ? T.accentBg : T.bgInput,
@@ -124,7 +151,8 @@ export default function Trade() {
             </div>
             <div>
               <label style={labelStyle}>Volume (lots)</label>
-              <input type="number" value={volume} onChange={e => setVolume(e.target.value)} step="0.01" min="0.01" style={inputStyle} />
+              <input type="number" value={volume} onChange={e => { setVolume(e.target.value); validateField('volume', e.target.value); }} step="0.01" min="0.01" style={{ ...inputStyle, borderColor: fieldErrors.volume ? T.red + '66' : T.border }} />
+              {fieldErrors.volume && <p style={{ fontFamily: T.font, fontSize: 11, color: T.red, marginTop: 4 }}>{fieldErrors.volume}</p>}
             </div>
           </div>
 
@@ -140,11 +168,13 @@ export default function Trade() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
             <div>
               <label style={labelStyle}>Stop Loss</label>
-              <input type="number" value={sl} onChange={e => setSl(e.target.value)} step="0.00001" placeholder="0.00000" style={inputStyle} />
+              <input type="number" value={sl} onChange={e => { setSl(e.target.value); validateField('sl', e.target.value); }} step="0.00001" placeholder="0.00000" style={{ ...inputStyle, borderColor: fieldErrors.sl ? T.red + '66' : T.border }} />
+{fieldErrors.sl && <p style={{ fontFamily: T.font, fontSize: 11, color: T.red, marginTop: 4 }}>{fieldErrors.sl}</p>}
             </div>
             <div>
               <label style={labelStyle}>Take Profit</label>
-              <input type="number" value={tp} onChange={e => setTp(e.target.value)} step="0.00001" placeholder="0.00000" style={inputStyle} />
+              <input type="number" value={tp} onChange={e => { setTp(e.target.value); validateField('tp', e.target.value); }} step="0.00001" placeholder="0.00000" style={{ ...inputStyle, borderColor: fieldErrors.tp ? T.red + '66' : T.border }} />
+{fieldErrors.tp && <p style={{ fontFamily: T.font, fontSize: 11, color: T.red, marginTop: 4 }}>{fieldErrors.tp}</p>}
             </div>
           </div>
 

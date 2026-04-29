@@ -6,6 +6,7 @@ import { api } from '../api/client';
 import { GATEWAY_URL } from '../theme';
 
 const WS_RECONNECT_DELAY_MS = [1000, 2000, 4000, 8000, 16000, 30000];
+const WS_MAX_ATTEMPTS = 10;
 
 export function useGatewayWS({ onMessage, enabled = true } = {}) {
   const [connected, setConnected] = useState(false);
@@ -42,6 +43,10 @@ export function useGatewayWS({ onMessage, enabled = true } = {}) {
       setConnected(false);
       wsRef.current = null;
       if (!enabled) return;
+      if (attempt.current >= WS_MAX_ATTEMPTS) {
+        console.warn('WS: max reconnect attempts reached, giving up');
+        return;
+      }
       const delay = WS_RECONNECT_DELAY_MS[
         Math.min(attempt.current, WS_RECONNECT_DELAY_MS.length - 1)
       ];

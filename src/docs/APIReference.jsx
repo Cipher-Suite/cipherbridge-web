@@ -1,5 +1,5 @@
 // src/docs/APIReference.jsx
-import { T } from '../theme';
+import { T, GATEWAY_URL } from '../theme';
 import { Badge, SectionTitle, CodeBlock } from '../components';
 
 const ENDPOINTS = [
@@ -61,7 +61,7 @@ export default function APIReference() {
       <SectionTitle sub="Complete REST and WebSocket API reference for Tonpo Gateway">API Reference</SectionTitle>
 
       <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 24, fontFamily: T.font, fontSize: 13, color: T.textMuted }}>
-        <div>Base URL: <code style={{ fontFamily: T.mono, color: T.accent, background: T.accentBg, padding: '2px 7px', borderRadius: 4 }}>https://gateway.cipherbridge.cloud</code></div>
+        <div>Base URL: <code style={{ fontFamily: T.mono, color: T.accent, background: T.accentBg, padding: '2px 7px', borderRadius: 4 }}>{GATEWAY_URL}</code></div>
         <div>Auth header: <code style={{ fontFamily: T.mono, color: T.accent, background: T.accentBg, padding: '2px 7px', borderRadius: 4 }}>X-API-Key: your_key</code></div>
       </div>
 

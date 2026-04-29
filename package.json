@@ -1,6 +1,6 @@
 {
-  "name": "ciphertrade-web",
-  "version": "1.0.0",
+  "name": "tonpo-web",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {

@@ -2,7 +2,38 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as api from '../api/endpoints';
 
-// ── Generic async hook ────────────────────────────────────────────────────
+// Visibility-aware polling — stops when tab hidden, resumes + refreshes on focus
+function useVisibilityInterval(callback, delay) {
+  const cbRef = useRef(callback);
+  const idRef = useRef(null);
+  useEffect(() => { cbRef.current = callback; }, [callback]);
+
+  useEffect(() => {
+    if (!delay) return;
+
+    const start = () => {
+      if (idRef.current) return; // already running
+      idRef.current = setInterval(() => cbRef.current(), delay);
+    };
+    const stop = () => {
+      clearInterval(idRef.current);
+      idRef.current = null;
+    };
+    const onVisibility = () => {
+      if (document.hidden) { stop(); } 
+      else { cbRef.current(); start(); } // immediate refresh + restart
+    };
+
+    if (!document.hidden) start();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [delay]);
+}
+
+// Generic async hook
 function useAsync(fn, deps = []) {
   const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,7 +57,7 @@ function useAsync(fn, deps = []) {
   return { data, loading, error, refresh: run };
 }
 
-// ── Accounts ──────────────────────────────────────────────────────────────
+//  Accounts
 export function useAccounts() {
   const [accounts, setAccounts] = useState([]);
   const [loading,  setLoading]  = useState(true);
@@ -63,7 +94,7 @@ export function useAccounts() {
   return { accounts, loading, error, refresh, create, remove, pause, resume, updateStatus };
 }
 
-// ── Account detail ────────────────────────────────────────────────────────
+// Account detail
 export function useAccountDetail(id) {
   const [account,  setAccount]  = useState(null);
   const [status,   setStatus]   = useState(null);
@@ -90,12 +121,11 @@ export function useAccountDetail(id) {
   return { account, status, loading, error, refresh };
 }
 
-// ── Positions ─────────────────────────────────────────────────────────────
+// Positions
 export function usePositions() {
   const [positions, setPositions] = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState(null);
-  const intervalRef = useRef(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -107,12 +137,8 @@ export function usePositions() {
     finally     { setLoading(false); }
   }, []);
 
-  useEffect(() => {
-    refresh();
-    // Auto-refresh every 10s
-    intervalRef.current = setInterval(refresh, 10000);
-    return () => clearInterval(intervalRef.current);
-  }, [refresh]);
+  useEffect(() => { refresh(); }, [refresh]);
+  useVisibilityInterval(refresh, 10000);
 
   const close = async (ticket) => {
     await api.closeOrder(ticket);
@@ -122,21 +148,18 @@ export function usePositions() {
   return { positions, loading, error, refresh, close };
 }
 
-// ── Health ────────────────────────────────────────────────────────────────
+//  Health
 export function useHealth() {
   const [health, setHealth] = useState(null);
   const refresh = useCallback(async () => {
     try { setHealth(await api.healthCheck()); } catch {}
   }, []);
-  useEffect(() => {
-    refresh();
-    const iv = setInterval(refresh, 30000);
-    return () => clearInterval(iv);
-  }, [refresh]);
+  useEffect(() => { refresh(); }, [refresh]);
+  useVisibilityInterval(refresh, 30000);
   return health;
 }
 
-// ── Webhooks ──────────────────────────────────────────────────────────────
+// Webhooks
 export function useWebhooks() {
   const [tokens,  setTokens]  = useState([]);
   const [loading, setLoading] = useState(true);

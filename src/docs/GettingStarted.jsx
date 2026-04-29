@@ -2,8 +2,7 @@
 import { T } from '../theme';
 import { CodeBlock, SectionTitle } from '../components';
 import { GATEWAY_URL } from '../theme';
-
-const BASE = 'https://gateway.cipherbridge.cloud';
+const BASE = GATEWAY_URL;
 
 export default function GettingStarted() {
   return (

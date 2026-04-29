@@ -5,6 +5,8 @@ import { T } from '../theme';
 import { StatCard, SectionTitle, StatusDot, Btn, Modal, Input, Alert, EmptyState } from '../components';
 import { useAccounts, useHealth } from '../hooks/useData';
 import { useGatewayWS } from '../hooks/useWebSocket';
+import { ConfirmDialog } from '../components';
+import { useToast } from '../hooks/useToast';
 
 function NewAccountModal({ open, onClose, onCreate }) {
   const [login,    setLogin]    = useState('');
@@ -13,7 +15,7 @@ function NewAccountModal({ open, onClose, onCreate }) {
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
   const [result,   setResult]   = useState(null);
-
+  
   const reset = () => { setLogin(''); setPassword(''); setServer(''); setError(''); setResult(null); };
   const handleClose = () => { reset(); onClose(); };
 
@@ -60,9 +62,12 @@ function NewAccountModal({ open, onClose, onCreate }) {
 export default function Overview() {
   const navigate = useNavigate();
   const { accounts, loading, error, create, pause, resume, remove, updateStatus, refresh } = useAccounts();
+  const { error: showError, success: showSuccess } = useToast();
   const health = useHealth();
   const [showModal, setShowModal] = useState(false);
   const [actionLoading, setActionLoading] = useState({});
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);  
 
   // Live WS — update account statuses in real-time
   const handleWsMessage = useCallback((msg) => {
@@ -74,7 +79,13 @@ export default function Overview() {
 
   const act = async (id, fn) => {
     setActionLoading(p => ({ ...p, [id]: true }));
-    try { await fn(id); } catch {}
+    try { 
+      await fn(id);
+      showSuccess('Action completed');
+      refresh();  // Refresh account list
+    } catch (e) { 
+      showError(e.message || 'Action failed');
+    }
     setActionLoading(p => ({ ...p, [id]: false }));
   };
 
@@ -169,7 +180,7 @@ export default function Overview() {
                   <Btn
                     size="sm" variant="danger"
                     loading={busy}
-                    onClick={() => { if (window.confirm('Delete this account? This will deprovision the MT5 instance.')) act(id, remove); }}
+                    onClick={() => setConfirmDelete(id)}
                   >Delete</Btn>
                 </div>
               </div>
@@ -179,6 +190,23 @@ export default function Overview() {
       )}
 
       <NewAccountModal open={showModal} onClose={() => setShowModal(false)} onCreate={create} />
+      <ConfirmDialog
+        open={!!confirmDelete}
+        title="Delete Account?"
+        message="This will deprovision the MT5 instance. All data will be lost permanently."
+        dangerous={true}
+        confirmText="Delete"
+        cancelText="Cancel"
+        loading={deleteLoading}
+        onConfirm={() => {
+          setDeleteLoading(true);
+          act(confirmDelete, remove).finally(() => {
+            setDeleteLoading(false);
+            setConfirmDelete(null);
+          });
+        }}
+        onCancel={() => setConfirmDelete(null)}
+      />      
     </div>
   );
 }

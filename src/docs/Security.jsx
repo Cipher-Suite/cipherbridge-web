@@ -14,7 +14,7 @@ const items = [
 export default function Security() {
   return (
     <div style={{ maxWidth: 720 }}>
-      <SectionTitle sub="How CipherTrade protects your credentials and data">Security Model</SectionTitle>
+      <SectionTitle sub="How Tonpo protects your credentials and data">Security Model</SectionTitle>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {items.map((item, i) => (
           <div key={i} style={{

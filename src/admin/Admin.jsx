@@ -3,13 +3,15 @@ import { useState } from 'react';
 import { T } from '../theme';
 import { SectionTitle, Badge, Btn, Alert, Modal, Spinner, EmptyState, StatusDot } from '../components';
 import { useAdminUsers } from '../hooks/useData';
+import { ConfirmDialog } from '../components';
+import { useToast } from '../hooks/useToast';
 
 function RotateKeyModal({ open, onClose, userId, onRotate }) {
   const [loading, setLoading] = useState(false);
   const [newKey,  setNewKey]  = useState(null);
   const [error,   setError]   = useState('');
   const [copied,  setCopied]  = useState(false);
-
+  
   const handleRotate = async () => {
     setLoading(true); setError('');
     try {
@@ -63,10 +65,13 @@ export default function Admin() {
   const { users, loading, error, deactivate, rotateKey, setAdmin, refresh } = useAdminUsers();
   const [rotateModal, setRotateModal] = useState(null);
   const [actionLoading, setActionLoading] = useState({});
+  const [confirmDeactivate, setConfirmDeactivate] = useState(null);
+  const [deactivateLoading, setDeactivateLoading] = useState(false);
+  const { error: showError } = useToast();
 
   const act = async (id, fn) => {
     setActionLoading(p => ({ ...p, [id]: true }));
-    try { await fn(id); } catch (e) { alert(e.message); }
+    try { await fn(id); refresh(); } catch (e) { showError(e.message || 'Action failed'); }
     setActionLoading(p => ({ ...p, [id]: false }));
   };
 
@@ -117,7 +122,7 @@ export default function Admin() {
                     >{u.is_admin ? 'Demote' : 'Admin'}</Btn>
                     {u.is_active !== false && (
                       <Btn size="sm" variant="danger" loading={busy}
-                        onClick={() => { if (window.confirm('Deactivate this user? They will lose access immediately.')) act(id, deactivate); }}
+                        onClick={() => setConfirmDeactivate(id)}
                       >Deactivate</Btn>
                     )}
                   </div>
@@ -149,7 +154,7 @@ export default function Admin() {
                       {u.is_admin ? 'Demote' : 'Make Admin'}
                     </Btn>
                     {u.is_active !== false && (
-                      <Btn size="sm" variant="danger" loading={busy} onClick={() => { if (window.confirm('Deactivate?')) act(id, deactivate); }}>
+                      <Btn size="sm" variant="danger" onClick={() => setConfirmDeactivate(id)}>
                         Deactivate
                       </Btn>
                     )}
@@ -174,6 +179,22 @@ export default function Admin() {
           .admin-cards{display:flex!important}
         }
       `}</style>
+      <ConfirmDialog
+        open={!!confirmDeactivate}
+        title="Deactivate User?"
+        message={`Deactivate user ${confirmDeactivate?.slice(0, 12)}...? They will not be able to access their account.`}
+        dangerous={true}
+        confirmText="Deactivate"
+        loading={deactivateLoading}
+        onConfirm={() => {
+          setDeactivateLoading(true);
+          act(confirmDeactivate, deactivate).finally(() => {
+            setDeactivateLoading(false);
+            setConfirmDeactivate(null);
+          });
+        }}
+        onCancel={() => setConfirmDeactivate(null)}
+      />      
     </div>
   );
 }

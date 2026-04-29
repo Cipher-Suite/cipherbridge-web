@@ -10,6 +10,7 @@ const NAV = {
     { to: '/positions', label: 'Positions',  icon: '◈' },
     { to: '/trade',     label: 'New Order',  icon: '↗' },
     { to: '/webhooks',  label: 'Webhooks',   icon: '⟳' },
+    { to: '/billing',   label: 'Billing',   icon: '◎' },
     { to: '/settings',  label: 'Settings',   icon: '⚙' },
   ],
   docs: [

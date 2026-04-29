@@ -6,6 +6,8 @@ import { rotateMyKey } from '../api/endpoints';
 import { useAuth } from '../auth/AuthContext';
 import { GATEWAY_URL } from '../theme';
 import { useNavigate } from 'react-router-dom';
+import { ConfirmDialog } from '../components';
+import { useToast } from '../hooks/useToast';
 
 export default function Settings() {
   const { user, logout, login } = useAuth();
@@ -14,18 +16,21 @@ export default function Settings() {
   const [copied,   setCopied]   = useState(false);
   const [showKey,  setShowKey]  = useState(false);
   const navigate = useNavigate();
+  const [confirmRotate, setConfirmRotate] = useState(false);
+  const { error: showError } = useToast();
 
   const handleRotate = async () => {
-    if (!window.confirm('This will invalidate your current key immediately. Any running bots using the old key will disconnect. Continue?')) return;
-    setRotating(true); setNewKey(null);
+    setRotating(true); 
+    setNewKey(null);
     try {
       const data = await rotateMyKey();
       setNewKey(data.api_key);
       await login(data.api_key);
     } catch (e) {
-      alert(`Rotation failed: ${e.message}`);
+      showError(`Rotation failed: ${e.message}`);
     } finally {
       setRotating(false);
+      setConfirmRotate(false);  // Close dialog
     }
   };
 
@@ -97,7 +102,7 @@ export default function Settings() {
           </div>
         )}
 
-        <Btn variant="ghost" loading={rotating} onClick={handleRotate}>
+        <Btn variant="ghost" onClick={() => setConfirmRotate(true)}>
           ↺ Rotate API Key
         </Btn>
         <p style={{ fontFamily: T.font, fontSize: 11, color: T.textDim, marginTop: 8 }}>
@@ -108,7 +113,7 @@ export default function Settings() {
       {/* Session */}
       <div style={card}>
         <h3 style={sectionHead}>Session</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, marginBottom: 20 }}>
           {[
             ['User ID',   user?.userId || '—'],
             ['Signed In', user?.loggedInAt ? new Date(user.loggedInAt).toLocaleDateString() : '—'],
@@ -138,7 +143,17 @@ export default function Settings() {
           </div>
         </div>
       </div>
-    </div>
+      <ConfirmDialog
+        open={confirmRotate}
+        title="Rotate API Key?"
+        message="This will invalidate your current key immediately. Any running bots using the old key will disconnect."
+        dangerous={true}
+        confirmText="Rotate"
+        loading={rotating}
+        onConfirm={handleRotate}
+        onCancel={() => setConfirmRotate(false)}
+      />      
+    </div>    
  </>
   );
 }
